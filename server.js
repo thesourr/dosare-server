@@ -40,7 +40,7 @@ app.post('/cauta-dosar', async (req, res) => {
       method: 'POST',
       headers: {
         'Content-Type': 'text/xml; charset=utf-8',
-        'SOAPAction': 'http://portalquery.just.ro/Query/CautareDosare'
+        'SOAPAction': 'Query/CautareDosare'
       },
       body: soapEnvelope
     });
