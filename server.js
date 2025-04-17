@@ -9,13 +9,13 @@ app.use(bodyParser.json());
 
 const PORT = process.env.PORT || 3000;
 
-// 🔵 Agent HTTPS care acceptă toate certificatele (pentru portal.just.ro)
+// 🔵 Agent HTTPS care acceptă toate certificatele SSL
 const httpsAgent = new https.Agent({
   rejectUnauthorized: false
 });
 
 app.get('/', (req, res) => {
-  res.send('Serverul SOAP 1.2 este online!');
+  res.send('✅ Server SOAP 1.2 adaptat după PortalWSClient este online!');
 });
 
 app.post('/cauta-dosar', async (req, res) => {
@@ -51,13 +51,13 @@ app.post('/cauta-dosar', async (req, res) => {
 
     const textResponse = await response.text();
 
-    console.log("🔵 XML primit de la portal.just.ro:");
+    console.log("🔵 XML brut primit:");
     console.log(textResponse);
 
     const parser = new xml2js.Parser({ explicitArray: false });
     parser.parseString(textResponse, (err, result) => {
       if (err) {
-        console.error("❌ Eroare la parsarea XML:", err);
+        console.error("❌ Eroare parsare XML:", err);
         return res.status(500).json({ error: 'Eroare la parsarea XML.' });
       }
 
@@ -77,42 +77,61 @@ app.post('/cauta-dosar', async (req, res) => {
         }
 
         const dosar = dosareResult.Dosar;
+
+        // 🔵 Extragem date principale
         const stadiu = dosar.stadiuProcesual || '-';
+        const obiectDosar = dosar.obiectDosar || '-';
+        const materie = dosar.materie || '-';
+        const submaterie = dosar.submaterie || '-';
+        const dataUltimeiModificari = dosar.dataUltimeiModificari || '-';
 
-        let termen = '-';
-        let solutie = '-';
-
+        // 🔵 Extragem lista de sedinte
+        let sedinte = [];
         if (dosar.sedinte) {
-          const sedinte = Array.isArray(dosar.sedinte) ? dosar.sedinte : [dosar.sedinte];
-          const ultimaSedinta = sedinte[sedinte.length - 1];
-          if (ultimaSedinta.data) {
-            termen = ultimaSedinta.data.split('T')[0];
-          }
-          if (ultimaSedinta.solutieSumar) {
-            solutie = ultimaSedinta.solutieSumar;
-          } else if (ultimaSedinta.solutie) {
-            solutie = ultimaSedinta.solutie;
-          }
+          const listaSedinte = Array.isArray(dosar.sedinte) ? dosar.sedinte : [dosar.sedinte];
+          sedinte = listaSedinte.map(s => ({
+            data: s.data || '-',
+            ora: s.ora || '-',
+            solutieSumar: s.solutieSumar || '-',
+            solutie: s.solutie || '-',
+            complet: s.complet || '-',
+            documentSedinta: s.documentSedinta || '-'
+          }));
+        }
+
+        // 🔵 Extragem lista de parti
+        let parti = [];
+        if (dosar.parti) {
+          const listaParti = Array.isArray(dosar.parti) ? dosar.parti : [dosar.parti];
+          parti = listaParti.map(p => ({
+            nume: p.nume || '-',
+            calitateParte: p.calitateParte || '-'
+          }));
         }
 
         return res.json({
-          termen: termen,
+          numarDosar: dosar.numarDosar || '-',
           stadiu: stadiu,
-          solutie: solutie
+          obiectDosar: obiectDosar,
+          materie: materie,
+          submaterie: submaterie,
+          dataUltimeiModificari: dataUltimeiModificari,
+          sedinte: sedinte,
+          parti: parti
         });
 
       } catch (parseError) {
-        console.error("❌ Eroare la extragerea datelor:", parseError);
-        return res.status(500).json({ error: 'Eroare la extragerea datelor.' });
+        console.error("❌ Eroare extragere date:", parseError);
+        return res.status(500).json({ error: 'Eroare extragere date din răspuns.' });
       }
     });
 
   } catch (fetchError) {
-    console.error("❌ Eroare la conectare cu portal.just.ro:", fetchError);
+    console.error("❌ Eroare fetch:", fetchError);
     return res.status(500).json({ error: 'Eroare la conectare portal.just.ro.' });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`✅ Serverul SOAP 1.2 rulează pe portul ${PORT}`);
+  console.log(`✅ Serverul SOAP 1.2 complet rulează pe portul ${PORT}`);
 });
