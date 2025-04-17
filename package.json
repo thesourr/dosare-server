@@ -1,6 +1,7 @@
 {
   "name": "dosare-server",
   "version": "1.0.0",
+  "description": "Server pentru căutare dosare portal.just.ro cu web scraping",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -9,6 +10,10 @@
     "express": "^4.17.1",
     "body-parser": "^1.19.0",
     "node-fetch": "^2.6.1",
-    "xml2js": "^0.4.23"
-  }
+    "cheerio": "^1.0.0-rc.12"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "license": "ISC"
 }
